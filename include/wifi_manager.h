@@ -2,17 +2,13 @@
 #define WIFI_MANAGER_H
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <WiFiManager.h>
 
-void initWiFi();
+void initWiFiManager();
+void checkWiFiConnection();
 
-void wifiLoop();
-
-bool wifiConnected();
+bool isWiFiConnected();
 
 String getIPAddress();
-
-int getRSSI();
+String getMacAddress();
 
 #endif

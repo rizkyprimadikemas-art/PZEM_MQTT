@@ -1,26 +1,20 @@
-#ifndef MQTT_MANAGER_H
-#define MQTT_MANAGER_H
+#ifndef MQTT_H
+#define MQTT_H
 
 #include <Arduino.h>
-#include <WiFiClientSecure.h>
-#include <PubSubClient.h>
-
-#include "config.h"
-#include "pzem.h"
-
-extern WiFiClientSecure secureClient;
-extern PubSubClient mqttClient;
 
 void initMQTT();
 
+void checkMQTTConnection();
+
 void mqttLoop();
 
-bool mqttConnected();
+bool isMQTTConnected();
 
-void reconnectMQTT();
+void publishPZEMData();
 
-void publishPZEM(PZEMData data);
+void publishHeartbeat();
 
-void publishStatus(const char *status);
+void publishDeviceInfo();
 
 #endif

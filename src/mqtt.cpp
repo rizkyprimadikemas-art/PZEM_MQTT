@@ -1,115 +1,192 @@
 #include "mqtt.h"
-#include "wifi_manager.h"
-#include "cert.h"
 
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-WiFiClientSecure secureClient;
-PubSubClient mqttClient(secureClient);
+#include "config.h"
+#include "cert.h"
+#include "pzem.h"
 
-unsigned long previousMQTTReconnect = 0;
-const unsigned long mqttReconnectInterval = 5000;
+// ======================================================
+// MQTT Client
+// ======================================================
+
+WiFiClientSecure secureClient;
+PubSubClient mqtt(secureClient);
+
+// ======================================================
+
+String topicData;
+String topicStatus;
+String topicInfo;
+String topicCmd;
+
+// ======================================================
+
+void mqttCallback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.print("[MQTT] Topic : ");
+    Serial.println(topic);
+
+    String message;
+
+    for (unsigned int i = 0; i < length; i++)
+    {
+        message += (char)payload[i];
+    }
+
+    Serial.print("[MQTT] Payload : ");
+    Serial.println(message);
+
+    // TODO:
+    // restart
+    // reset energy
+    // ota
+}
+
+// ======================================================
 
 void initMQTT()
 {
-    Serial.println();
-    Serial.println("=================================");
-    Serial.println("Initializing MQTT");
-    Serial.println("=================================");
-
     secureClient.setCACert(root_ca);
 
-    mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+    mqtt.setServer(MQTT_HOST, MQTT_PORT);
+
+    mqtt.setCallback(mqttCallback);
+
+    topicData = "ems/" + String(DEVICE_ID) + "/data";
+    topicStatus = "ems/" + String(DEVICE_ID) + "/status";
+    topicInfo = "ems/" + String(DEVICE_ID) + "/info";
+    topicCmd = "ems/" + String(DEVICE_ID) + "/cmd";
 }
 
-bool mqttConnected()
-{
-    return mqttClient.connected();
-}
+// ======================================================
 
-void reconnectMQTT()
+void checkMQTTConnection()
 {
-    if (!wifiConnected())
+    if (WiFi.status() != WL_CONNECTED)
         return;
 
-    if (mqttClient.connected())
+    if (mqtt.connected())
         return;
 
-    Serial.print("Connecting MQTT... ");
+    Serial.println("[MQTT] Connecting...");
 
-    String statusTopic = "ems/" + String(DEVICE_ID) + "/status";
+    bool ok = mqtt.connect(
+        DEVICE_ID,
+        MQTT_USER,
+        MQTT_PASS,
+        topicStatus.c_str(),
+        0,
+        true,
+        "offline");
 
-    if (mqttClient.connect(
-            DEVICE_ID,
-            MQTT_USER,
-            MQTT_PASS,
-            statusTopic.c_str(),
-            1,
-            true,
-            "offline"))
+    if (ok)
     {
-        Serial.println("SUCCESS");
+        Serial.println("[MQTT] Connected");
 
-        publishStatus("online");
+        mqtt.publish(
+            topicStatus.c_str(),
+            "online",
+            true);
 
-        mqttClient.subscribe(("ems/" + String(DEVICE_ID) + "/cmd").c_str());
+        mqtt.subscribe(topicCmd.c_str());
     }
     else
     {
-        Serial.print("FAILED : ");
-        Serial.println(mqttClient.state());
+        Serial.print("[MQTT] Failed : ");
+        Serial.println(mqtt.state());
     }
 }
+
+// ======================================================
 
 void mqttLoop()
 {
-    unsigned long now = millis();
-
-    if (now - previousMQTTReconnect >= mqttReconnectInterval)
-    {
-        previousMQTTReconnect = now;
-
-        reconnectMQTT();
-    }
-
-    mqttClient.loop();
+    mqtt.loop();
 }
 
-void publishStatus(const char *status)
+// ======================================================
+
+bool isMQTTConnected()
 {
-    if (!mqttClient.connected())
-        return;
-
-    String topic = "ems/" + String(DEVICE_ID) + "/status";
-
-    mqttClient.publish(topic.c_str(), status, true);
+    return mqtt.connected();
 }
 
-void publishPZEM(PZEMData data)
-{
-    if (!mqttClient.connected())
-        return;
+// ======================================================
 
-    StaticJsonDocument<512> doc;
+void publishHeartbeat()
+{
+    JsonDocument doc;
 
     doc["device"] = DEVICE_ID;
-    doc["voltage"] = data.voltage;
-    doc["current"] = data.current;
-    doc["power"] = data.power;
-    doc["energy"] = data.energy;
-    doc["frequency"] = data.frequency;
-    doc["pf"] = data.pf;
-    doc["ip"] = getIPAddress();
-    doc["rssi"] = getRSSI();
+    doc["status"] = "online";
     doc["uptime"] = millis() / 1000;
 
-    char payload[512];
+    char buffer[128];
 
-    serializeJson(doc, payload);
+    serializeJson(doc, buffer);
 
-    String topic = "ems/" + String(DEVICE_ID) + "/data";
+    mqtt.publish(topicStatus.c_str(), buffer, true);
+}
 
-    mqttClient.publish(topic.c_str(), payload);
+// ======================================================
 
-    Serial.println(payload);
+void publishDeviceInfo()
+{
+    JsonDocument doc;
+
+    doc["device"] = DEVICE_ID;
+    doc["ip"] = WiFi.localIP().toString();
+    doc["mac"] = WiFi.macAddress();
+    doc["rssi"] = WiFi.RSSI();
+    doc["heap"] = ESP.getFreeHeap();
+    doc["uptime"] = millis() / 1000;
+
+    char buffer[256];
+
+    serializeJson(doc, buffer);
+
+    mqtt.publish(topicInfo.c_str(), buffer);
+}
+
+// ======================================================
+
+void publishPZEMData()
+{
+    float voltage = getVoltage();
+
+    if (isnan(voltage))
+    {
+        Serial.println("[PZEM] Read Error");
+        return;
+    }
+
+    JsonDocument doc;
+
+    doc["device"] = DEVICE_ID;
+    doc["voltage"] = voltage;
+    doc["current"] = getCurrent();
+    doc["power"] = getPower();
+    doc["energy"] = getEnergy();
+    doc["frequency"] = getFrequency();
+    doc["pf"] = getPF();
+
+    doc["rssi"] = WiFi.RSSI();
+
+    char buffer[256];
+
+    serializeJson(doc, buffer);
+
+    if (mqtt.publish(topicData.c_str(), buffer))
+    {
+        Serial.println("[MQTT] Publish OK");
+        Serial.println(buffer);
+    }
+    else
+    {
+        Serial.println("[MQTT] Publish Failed");
+    }
 }

@@ -1,39 +1,95 @@
 #include "pzem.h"
 
+#include <PZEM004Tv30.h>
+
+#include "config.h"
+
 HardwareSerial PZEMSerial(1);
 
 PZEM004Tv30 pzem(PZEMSerial, RX_PIN, TX_PIN);
 
+//======================================================
+// Data
+//======================================================
+
+static float voltage = NAN;
+static float current = NAN;
+static float power = NAN;
+static float energy = NAN;
+static float frequency = NAN;
+static float pf = NAN;
+
+static bool online = false;
+
+//======================================================
+
 void initPZEM()
 {
-    Serial.println("=================================");
-    Serial.println("Initializing PZEM...");
-    Serial.println("=================================");
+    PZEMSerial.begin(
+        9600,
+        SERIAL_8N1,
+        RX_PIN,
+        TX_PIN);
 
-    PZEMSerial.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
-
-    delay(100);
-
-    Serial.println("PZEM Ready");
+    Serial.println("[PZEM] Initialized");
 }
 
-PZEMData readPZEM()
+//======================================================
+
+bool readPZEM()
 {
-    PZEMData data;
+    voltage = pzem.voltage();
 
-    data.voltage = pzem.voltage();
-    data.current = pzem.current();
-    data.power = pzem.power();
-    data.energy = pzem.energy();
-    data.frequency = pzem.frequency();
-    data.pf = pzem.pf();
-
-    data.valid = !isnan(data.voltage);
-
-    if (!data.valid)
+    if (isnan(voltage))
     {
-        Serial.println("[PZEM] Read Failed");
+        online = false;
+        return false;
     }
 
-    return data;
+    current = pzem.current();
+    power = pzem.power();
+    energy = pzem.energy();
+    frequency = pzem.frequency();
+    pf = pzem.pf();
+
+    online = true;
+
+    return true;
+}
+
+//======================================================
+
+float getVoltage()
+{
+    return voltage;
+}
+
+float getCurrent()
+{
+    return current;
+}
+
+float getPower()
+{
+    return power;
+}
+
+float getEnergy()
+{
+    return energy;
+}
+
+float getFrequency()
+{
+    return frequency;
+}
+
+float getPF()
+{
+    return pf;
+}
+
+bool isPZEMOnline()
+{
+    return online;
 }

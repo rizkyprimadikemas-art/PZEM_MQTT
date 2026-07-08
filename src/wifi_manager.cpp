@@ -1,72 +1,75 @@
 #include "wifi_manager.h"
 
-WiFiManager wm;
+#include <WiFi.h>
+#include <WiFiManager.h>
 
-unsigned long previousWifiCheck = 0;
-const unsigned long wifiCheckInterval = 5000;
+static WiFiManager wm;
 
-void initWiFi()
+//--------------------------------------------------
+// Inisialisasi WiFiManager
+//--------------------------------------------------
+
+void initWiFiManager()
 {
-    Serial.println();
-    Serial.println("=================================");
-    Serial.println("Initializing WiFi");
-    Serial.println("=================================");
-
     WiFi.mode(WIFI_STA);
+
+    // Hostname ESP
+    WiFi.setHostname("EMS001");
+
+    // Konfigurasi AP jika belum pernah tersimpan
+    wm.setConfigPortalTimeout(180);
+
+    wm.setConnectRetries(3);
+
+    wm.setDebugOutput(true);
+
+    Serial.println("[WiFi] Starting WiFiManager...");
 
     bool res = wm.autoConnect("EMS_Setup");
 
-    if (!res)
+    if(res)
     {
-        Serial.println("WiFi Connection Failed");
+        Serial.println("[WiFi] Connected");
+        Serial.print("[WiFi] IP : ");
+        Serial.println(WiFi.localIP());
     }
     else
     {
-        Serial.println("WiFi Connected");
-        Serial.print("IP Address : ");
-        Serial.println(WiFi.localIP());
-
-        Serial.print("RSSI       : ");
-        Serial.print(WiFi.RSSI());
-        Serial.println(" dBm");
+        Serial.println("[WiFi] Config Portal Timeout");
     }
 }
 
-void wifiLoop()
-{
-    unsigned long now = millis();
+//--------------------------------------------------
+// Dipanggil dari scheduler setiap 5 detik
+//--------------------------------------------------
 
-    if (now - previousWifiCheck < wifiCheckInterval)
+void checkWiFiConnection()
+{
+    if(WiFi.status()==WL_CONNECTED)
         return;
 
-    previousWifiCheck = now;
+    Serial.println("[WiFi] Reconnecting...");
 
-    if (WiFi.status() != WL_CONNECTED)
-    {
-        Serial.println("[WiFi] Reconnecting...");
-
-        WiFi.disconnect();
-        WiFi.reconnect();
-    }
+    WiFi.reconnect();
 }
 
-bool wifiConnected()
+//--------------------------------------------------
+
+bool isWiFiConnected()
 {
-    return WiFi.status() == WL_CONNECTED;
+    return WiFi.status()==WL_CONNECTED;
 }
+
+//--------------------------------------------------
 
 String getIPAddress()
 {
-    if (WiFi.status() != WL_CONNECTED)
-        return "0.0.0.0";
-
     return WiFi.localIP().toString();
 }
 
-int getRSSI()
-{
-    if (WiFi.status() != WL_CONNECTED)
-        return -999;
+//--------------------------------------------------
 
-    return WiFi.RSSI();
+String getMacAddress()
+{
+    return WiFi.macAddress();
 }
