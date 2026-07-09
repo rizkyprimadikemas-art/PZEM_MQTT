@@ -1,0 +1,348 @@
+/* =====================================================
+   LANTABURA EMS
+   WiFi Portal
+===================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:
+    "Segoe UI",
+    sans-serif;
+
+    background:
+    linear-gradient(
+        135deg,
+        #0f172a,
+        #1e293b);
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:20px;
+}
+
+.container{
+
+    width:100%;
+
+    max-width:430px;
+}
+
+.card{
+
+    background:rgba(255,255,255,.08);
+
+    backdrop-filter:blur(18px);
+
+    border-radius:18px;
+
+    padding:30px;
+
+    box-shadow:
+    0 15px 45px
+    rgba(0,0,0,.45);
+
+    animation:fade .6s;
+}
+
+@keyframes fade{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(20px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+.logo{
+
+    font-size:58px;
+
+    text-align:center;
+
+    margin-bottom:10px;
+}
+
+h1{
+
+    color:white;
+
+    text-align:center;
+
+    font-size:28px;
+
+    margin-bottom:5px;
+}
+
+.subtitle{
+
+    color:#bfc7d5;
+
+    text-align:center;
+
+    margin-bottom:25px;
+}
+
+.section{
+
+    margin-bottom:20px;
+}
+
+.section label{
+
+    display:block;
+
+    color:white;
+
+    margin-bottom:8px;
+
+    font-size:14px;
+}
+
+input{
+
+    width:100%;
+
+    padding:12px;
+
+    border:none;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-size:15px;
+}
+
+.passwordBox{
+
+    display:flex;
+
+    gap:10px;
+}
+
+.passwordBox input{
+
+    flex:1;
+}
+
+.passwordBox button{
+
+    width:55px;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    background:#334155;
+
+    color:white;
+
+    font-size:18px;
+}
+
+button{
+
+    cursor:pointer;
+
+    transition:.25s;
+}
+
+#connectButton{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:14px;
+
+    background:#2563eb;
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:bold;
+}
+
+#connectButton:hover{
+
+    background:#1d4ed8;
+}
+
+.status{
+
+    margin-top:15px;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    text-align:center;
+
+    background:#334155;
+
+    color:white;
+
+    font-size:14px;
+}
+
+hr{
+
+    margin:25px 0;
+
+    border:none;
+
+    border-top:1px solid
+    rgba(255,255,255,.15);
+}
+
+.device h3{
+
+    color:white;
+
+    margin-bottom:12px;
+
+    font-size:18px;
+}
+
+.device table{
+
+    width:100%;
+
+    color:white;
+
+    border-collapse:collapse;
+}
+
+.device td{
+
+    padding:7px 0;
+}
+
+.device td:first-child{
+
+    color:#94a3b8;
+
+    width:110px;
+}
+
+.loading{
+
+    text-align:center;
+
+    color:#94a3b8;
+
+    padding:20px;
+}
+
+/* ============================
+   WiFi List
+============================ */
+
+.wifi-item{
+
+    background:#334155;
+
+    color:white;
+
+    padding:12px;
+
+    margin-bottom:8px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    transition:.25s;
+}
+
+.wifi-item:hover{
+
+    background:#2563eb;
+}
+
+.wifi-name{
+
+    font-weight:bold;
+}
+
+.wifi-info{
+
+    margin-top:4px;
+
+    font-size:12px;
+
+    color:#cbd5e1;
+}
+
+/* ============================
+   Signal Color
+============================ */
+
+.good{
+
+    color:#22c55e;
+}
+
+.medium{
+
+    color:#eab308;
+}
+
+.low{
+
+    color:#ef4444;
+}
+
+/* ============================
+   Responsive
+============================ */
+
+@media(max-width:500px){
+
+.card{
+
+    padding:22px;
+
+}
+
+h1{
+
+    font-size:24px;
+
+}
+
+.logo{
+
+    font-size:46px;
+
+}
+
+}
